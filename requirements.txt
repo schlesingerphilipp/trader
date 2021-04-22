@@ -1,0 +1,9 @@
+numpy
+tensorflow
+Tensorforce==0.6.2
+tensorflow-estimator
+setuptools
+psycopg2==2.8.4
+redis
+gym >= 0.17.2
+mlflow
