@@ -44,7 +44,7 @@ class StockEnvironment(Environment):
 
     def execute(self, actions):
         reward = 0
-        states = []
+        next_state = None
         if not isinstance(actions, list):
             actions = [actions]
         for action in actions:
@@ -56,7 +56,7 @@ class StockEnvironment(Environment):
             if self.terminal():
                 break
             if self.is_wait(action) or self.get_stock_price(action, features) == 0.0:
-                states.append(self.next_state())
+                next_state = self.next_state()
                 continue
             if self.owning is not False:
                 sell_price = self.get_stock_price(self.owning, features)
@@ -66,8 +66,8 @@ class StockEnvironment(Environment):
             self.owning = action
             self.buy_price = self.get_stock_price(action, features)
             mlflow.log_metric("buy_price", self.buy_price)
-            states.append(self.next_state())
-        return states, self.terminal(), reward
+            next_state = self.next_state()
+        return next_state, self.terminal(), reward
 
     def terminal(self):
         return self.stockMarket.timestep > self.offset + self.max_step_per_episode

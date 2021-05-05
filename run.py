@@ -12,7 +12,7 @@ def train(db, max_step_per_episode, network_spec, num_episodes):
         states=env.states(),
         actions=env.actions(),
         network=network_spec,
-        batch_size=1,
+        batch_size=32,
         memory=1008,
         # BatchAgent
         # Model
