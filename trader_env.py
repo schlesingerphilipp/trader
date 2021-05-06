@@ -20,14 +20,28 @@ class StockEnvironment(Environment):
 
 
     def states(self):
-        return dict(open=dict(type="float", shape=(self.stockMarket.STOCKS,), min_value=0.0, max_value=34000.0),
-                    close=dict(type="float", shape=(self.stockMarket.STOCKS,), min_value=0.0, max_value=34000.0),
-                    high=dict(type="float", shape=(self.stockMarket.STOCKS,), min_value=0.0, max_value=34000.0),
-                    low=dict(type="float", shape=(self.stockMarket.STOCKS,), min_value=0.0, max_value=34000.0),
-                    volume=dict(type="float", shape=(self.stockMarket.STOCKS,), min_value=0.0),
-                    owning=dict(type="float", shape=(self.stockMarket.STOCKS,), min_value=0.0, max_value=1.0)
-                    #,fake=dict(type="float", shape=(1,), min_value=0.0, max_value=1.0)
-        )
+        one = self.stockMarket.get()
+        shape = dict()
+        for key in one:
+            shape_ = (len(one[key]),1) if "_hist" in key else (len(one[key]),)
+            if "volume" in key:
+                max_value = 1000000000.0
+            elif "valid_action" == key:
+                max_value = 1.0
+            else:
+                max_value = 34000.0
+            shape[key] = dict(type="float", shape=shape_, min_value=0.0, max_value=max_value)
+        return shape
+
+
+        #return dict(open=dict(type="float", shape=(self.stockMarket.STOCKS,), min_value=0.0, max_value=34000.0),
+        #            close=dict(type="float", shape=(self.stockMarket.STOCKS,), min_value=0.0, max_value=34000.0),
+        #            high=dict(type="float", shape=(self.stockMarket.STOCKS,), min_value=0.0, max_value=34000.0),
+        #            low=dict(type="float", shape=(self.stockMarket.STOCKS,), min_value=0.0, max_value=34000.0),
+        #            volume=dict(type="float", shape=(self.stockMarket.STOCKS,), min_value=0.0),
+        #            owning=dict(type="float", shape=(self.stockMarket.STOCKS,), min_value=0.0, max_value=1.0)
+        #            #,fake=dict(type="float", shape=(1,), min_value=0.0, max_value=1.0)
+        #)
 
     def actions(self):
         return dict(type="int", num_values=len(self.action_vec))
@@ -79,7 +93,7 @@ class StockEnvironment(Environment):
     def next_state(self):
         state = self.stockMarket.next()
         if self.owning is not False:
-            state["owning"][self.owning] = 1
+            state["valid_action"][self.owning] = 0 # owning is used for product. So if owning is 1 the action buy this is valid
         return state
 
     def get_stock_price(self, action, features):

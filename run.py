@@ -1,11 +1,9 @@
 from tensorforce.agents import DQNAgent
 from tensorforce.execution import Runner
-from data_provider import DataProvider
 from trader_env import StockEnvironment
 import mlflow
 
-def train(db, max_step_per_episode, network_spec, num_episodes):
-    data_provider = DataProvider(db)
+def train(data_provider, max_step_per_episode, network_spec, num_episodes):
     env = StockEnvironment(data_provider, max_step_per_episode, 0)
 
     agent = DQNAgent(
