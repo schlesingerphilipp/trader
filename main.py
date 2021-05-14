@@ -80,5 +80,5 @@ def eval_():
 
 
 if __name__ == "__main__":
-    eval_()
+    train_main()
 
