@@ -1,6 +1,5 @@
 from tensorforce.environments import Environment
 from stock_market import StockMarket
-import mlflow
 
 class StockEnvironment(Environment):
 
@@ -34,15 +33,6 @@ class StockEnvironment(Environment):
         return shape
 
 
-        #return dict(open=dict(type="float", shape=(self.stockMarket.STOCKS,), min_value=0.0, max_value=34000.0),
-        #            close=dict(type="float", shape=(self.stockMarket.STOCKS,), min_value=0.0, max_value=34000.0),
-        #            high=dict(type="float", shape=(self.stockMarket.STOCKS,), min_value=0.0, max_value=34000.0),
-        #            low=dict(type="float", shape=(self.stockMarket.STOCKS,), min_value=0.0, max_value=34000.0),
-        #            volume=dict(type="float", shape=(self.stockMarket.STOCKS,), min_value=0.0),
-        #            owning=dict(type="float", shape=(self.stockMarket.STOCKS,), min_value=0.0, max_value=1.0)
-        #            #,fake=dict(type="float", shape=(1,), min_value=0.0, max_value=1.0)
-        #)
-
     def actions(self):
         return dict(type="int", num_values=len(self.action_vec))
 
@@ -54,7 +44,7 @@ class StockEnvironment(Environment):
     def reset(self):
         self.owning = False
         self.stockMarket = StockMarket(self.data_provider, self.offset)
-        return [self.stockMarket.get()]  #self.stockMarket.get_many(self.acts_per_step)
+        return [self.stockMarket.get()]
 
     def execute(self, actions):
         reward = 0
@@ -62,11 +52,8 @@ class StockEnvironment(Environment):
         if not isinstance(actions, list):
             actions = [actions]
         for action in actions:
-            mlflow.log_metric("action", action)
             current_state = self.stockMarket.get()
             features = current_state["close"]
-            for i in range(len(features)):
-                mlflow.log_metric(f"feature_close_{i}", features[i])
             if self.terminal():
                 break
             if self.is_wait(action) or self.get_stock_price(action, features) == 0.0:
@@ -74,12 +61,9 @@ class StockEnvironment(Environment):
                 continue
             if self.owning is not False:
                 sell_price = self.get_stock_price(self.owning, features)
-                mlflow.log_metric("sell_price", sell_price)
                 reward += (sell_price - self.buy_price) / self.buy_price
-                mlflow.log_metric("reward", reward)
             self.owning = action
             self.buy_price = self.get_stock_price(action, features)
-            mlflow.log_metric("buy_price", self.buy_price)
             next_state = self.next_state()
         return next_state, self.terminal(), reward
 

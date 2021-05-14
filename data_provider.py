@@ -25,3 +25,11 @@ class DataProvider:
         raw_value = self.redis_conn.get(1).decode("utf-8")
         loaded_value = json.loads(raw_value)
         return len(loaded_value["open"])
+
+    def has_data_key(self, key):
+        try:
+            self.load(key)
+            return True
+        except:
+            print("no data left")
+            return False
