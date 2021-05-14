@@ -39,29 +39,36 @@ def train(data_provider, max_step_per_episode, agent_dir, agent_name, overwrite,
     runner = Runner(agent=agent, environment=env)
     offset = 0
     num_episodes = 20
+    step = 0
     while data_provider.has_data_key(offset + max_step_per_episode):
         runner.run(num_episodes=num_episodes)
         offset = offset + max_step_per_episode
         env.offset = offset
         agent.save(agent_dir, agent_name)
-        evaluate(agent_dir, agent_name, data_provider, max_step_per_episode, offset - max_step_per_episode)
+        if step % 10 == 0:
+            evaluate(agent_dir, agent_name, data_provider, max_step_per_episode, offset - max_step_per_episode, agent)
+        step += 1
     return agent, env
 
 
-def evaluate(agent_dir, agent_name, data_provider, max_step_per_episode, offset):
+def evaluate(agent_dir, agent_name, data_provider, max_step_per_episode, offset=0, agent=None):
+    print("Evaluating")
     env = StockEnvironment(data_provider, max_step_per_episode, offset)
-    agent = TensorforceAgent.load(agent_dir, agent_name, "checkpoint", env)
-    env.offset = env.max_step_per_episode + 1
-    for _ in range(env.max_step_per_episode):
-        states = env.reset()
-        terminal = False
-        while not terminal:
-            actions = agent.act(states=states, independent=True, deterministic=True)
-            if not isinstance(actions, list):
-                actions = [actions]
-            for action in actions:
-                mlflow.log_metric("action", action)
-            states, terminal, reward = env.execute(actions=actions)
-            mlflow.log_metric("reward", reward)
+    if agent is None:
+        agent = TensorforceAgent.load(agent_dir, agent_name, "checkpoint", env)
+    states = env.reset()
+    rewards = 0
+    step = 0
+    while not env.terminal():
+        step += 1
+        actions = agent.act(states=states, independent=True, deterministic=True)
+        if not isinstance(actions, list):
+            actions = [actions]
+        for action in actions:
+            mlflow.log_metric("action", action)
+        states, terminal, reward = env.execute(actions=actions)
+        mlflow.log_metric("reward", reward)
+        rewards += reward
+    print(f"Reward Avg: {rewards / step}")
 
 

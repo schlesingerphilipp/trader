@@ -2,7 +2,7 @@ import mlflow
 from run import train, evaluate
 import json
 from data_provider import DataProvider
-import os
+import subprocess
 
 def build_melt_down(aggregate_layer_ins):
     python_has_no_list_operators = []
@@ -17,7 +17,8 @@ def build_melt_down(aggregate_layer_ins):
 
 def train_main():
     with mlflow.start_run():
-        os.system("echo Hello from the other side!")
+        git_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+        mlflow.log_param("git_hash", git_hash)
         max_step_per_episode = 1000  # 2714200
         mlflow.log_param("max_step_per_episode", max_step_per_episode)
 
@@ -27,7 +28,6 @@ def train_main():
         first = data_provider.load(0)
         layers = []
         aggregate_layer_ins = []
-        valid_action_layer_name = "valid_action_embedding"
         for key in first:
             if "_hist" in key:
                 register_name = f"{key}_trend"
@@ -44,13 +44,6 @@ def train_main():
                 ]
                 aggregate_layer_ins.append(register_name)
                 layers.append(trend_layer)
-            elif "valid_action" == key:
-                layer = [
-                    dict(type='retrieve', tensors=[key]),
-                    dict(type='register', tensor=valid_action_layer_name)
-                ]
-                layers.append(layer)
-
             else:
                 register_name = f"{key}_embedding"
                 layer = [
@@ -70,13 +63,6 @@ def train_main():
         melt_down_layers.append(dict(type='dense', size=6))
         melt_down_layers.append(dict(type='register', tensor='aggregate_layer'))
         layers.append(melt_down_layers)
-        owning_dropout_layer = [
-            dict(
-                type='retrieve', aggregation='product',
-                tensors=[valid_action_layer_name, 'aggregate_layer']
-            )
-        ]
-        layers.append(owning_dropout_layer)
         # network_spec = "auto"
         network_spec = layers
 
@@ -85,7 +71,7 @@ def train_main():
         train(data_provider, max_step_per_episode, "artifacts", "abc-agent", False,  network_spec)
 
 def eval_():
-    name = "a-agent"
+    name = "abc-agent"
     dir_ = "artifacts"
     db = 3
     data_provider = DataProvider(db)
@@ -94,5 +80,5 @@ def eval_():
 
 
 if __name__ == "__main__":
-    train_main()
+    eval_()
 

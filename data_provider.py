@@ -15,7 +15,6 @@ class DataProvider:
     def load(self, key):
         raw_value = self.redis_conn.get(key).decode("utf-8")
         loaded_value = json.loads(raw_value)
-        loaded_value["valid_action"] = [1 for _ in range(self.stocks + 1)]
         return loaded_value
 
     def close(self):

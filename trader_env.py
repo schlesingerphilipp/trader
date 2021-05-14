@@ -44,7 +44,7 @@ class StockEnvironment(Environment):
     def reset(self):
         self.owning = False
         self.stockMarket = StockMarket(self.data_provider, self.offset)
-        return [self.stockMarket.get()]
+        return [self.next_state()]
 
     def execute(self, actions):
         reward = 0
@@ -58,6 +58,7 @@ class StockEnvironment(Environment):
                 break
             if self.is_wait(action) or self.get_stock_price(action, features) == 0.0:
                 next_state = self.next_state()
+                reward += -0.001
                 continue
             if self.owning is not False:
                 sell_price = self.get_stock_price(self.owning, features)
@@ -76,8 +77,11 @@ class StockEnvironment(Environment):
 
     def next_state(self):
         state = self.stockMarket.next()
+        state["action_mask"] = [True for _ in self.action_vec]
         if self.owning is not False:
-            state["valid_action"][self.owning] = 0 # owning is used for product. So if owning is 1 the action buy this is valid
+            state["action_mask"][self.owning] = False
+        else:
+            state["action_mask"][self.WAIT_ACTION] = False
         return state
 
     def get_stock_price(self, action, features):
