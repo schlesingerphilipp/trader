@@ -58,7 +58,7 @@ class StockEnvironment(Environment):
                 break
             if self.is_wait(action) or self.get_stock_price(action, features) == 0.0:
                 next_state = self.next_state()
-                reward += -0.001
+                reward += -0.00001
                 continue
             if self.owning is not False:
                 sell_price = self.get_stock_price(self.owning, features)

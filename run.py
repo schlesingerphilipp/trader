@@ -37,7 +37,7 @@ def train(data_provider, max_step_per_episode, agent_dir, agent_name, overwrite,
         mlflow.log_param(key, agent_specs[key])
 
     runner = Runner(agent=agent, environment=env)
-    offset = 0
+    offset = 20000
     num_episodes = 20
     step = 0
     while data_provider.has_data_key(offset + max_step_per_episode):

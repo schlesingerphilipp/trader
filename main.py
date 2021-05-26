@@ -68,10 +68,10 @@ def train_main():
 
         mlflow.log_param("network_spec", ',\n'.join([',\n'.join([json.dumps(part_ele) if not callable(part_ele) else str(part_ele) for part_ele in net_part])
                                                      for net_part in network_spec]))
-        train(data_provider, max_step_per_episode, "artifacts", "abc-agent", False,  network_spec)
+        train(data_provider, max_step_per_episode, "artifacts", "abcd-agent", False,  network_spec)
 
 def eval_():
-    name = "abc-agent"
+    name = "abcd-agent"
     dir_ = "artifacts"
     db = 3
     data_provider = DataProvider(db)
