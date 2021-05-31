@@ -22,14 +22,16 @@ class StockEnvironment(Environment):
         one = self.stockMarket.get()
         shape = dict()
         for key in one:
-            shape_ = (len(one[key]),1) if "_hist" in key else (len(one[key]),)
+            if key == "time":
+                continue
+            shape_ = (len(one[key]),)
             if "volume" in key:
                 max_value = 1000000000.0
-            elif "valid_action" == key:
-                max_value = 1.0
+                min_value = -100000000.0 # -8663080.64786547
             else:
-                max_value = 34000.0
-            shape[key] = dict(type="float", shape=shape_, min_value=0.0, max_value=max_value)
+                min_value = -2500.0
+                max_value = 2800.0
+            shape[key] = dict(type="float", shape=shape_, min_value=min_value, max_value=max_value)
         return shape
 
 
