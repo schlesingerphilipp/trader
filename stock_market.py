@@ -1,12 +1,12 @@
 class StockMarket:
 
-    def __init__(self, data_provider, offset):
-        self.state = []
+    def __init__(self, data_provider, offset, stock_names):
         self.data_provider = data_provider
         state = self.get_state(1)
         self.STATES_SIZE = (len(state[row]) for row in state)
-        self.STOCKS = len(state["open"])
+        self.STOCKS = len(stock_names)
         self.timestep = offset
+        self.stock_names = stock_names
 
 
     def next(self):

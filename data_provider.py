@@ -23,7 +23,8 @@ class DataProvider:
     def get_number_of_stocks(self):
         raw_value = self.redis_conn.get(1).decode("utf-8")
         loaded_value = json.loads(raw_value)
-        return len(loaded_value["open"])
+        t1s = [key for key in loaded_value if "open_t1_" in key]
+        return len(t1s)
 
     def has_data_key(self, key):
         try:

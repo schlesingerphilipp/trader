@@ -1,83 +1,35 @@
 import mlflow
+
+from mlconfig import MlConfig
 from run import train, evaluate
-import json
-from data_provider import DataProvider
 import subprocess
-
-def build_melt_down(aggregate_layer_ins):
-    python_has_no_list_operators = []
-    i = len(aggregate_layer_ins)
-    while i > (10 / 32):
-        python_has_no_list_operators.append(dict(type='dense', size=int(32*i)))
-        python_has_no_list_operators.append(dict(type='dropout', rate=0.5))
-        i = i / 2
-    return python_has_no_list_operators
-
-def conv_network(row):
-    layers = []
-    aggregate_layer_ins = []
-    for key in row:
-        if "_hist" in key:
-            register_name = f"{key}_trend"
-            trend_layer = [
-                dict(type='retrieve', tensors=[key]),
-                dict(type='conv1d', size=32, window=3),
-                dict(type='conv1d', size=64, window=3),
-                dict(type='pooling', reduction='max'),
-                dict(type='dropout', rate=0.25),
-                dict(type='dense', size=128),
-                dict(type='dropout', rate=0.5),
-                dict(type='dense', size=64),
-                dict(type='register', tensor=register_name)
-            ]
-            aggregate_layer_ins.append(register_name)
-            layers.append(trend_layer)
-        else:
-            register_name = f"{key}_embedding"
-            layer = [
-                dict(type='retrieve', tensors=[key]),
-                dict(type='dense', size=64),
-                dict(type='dense', size=32),
-                dict(type='register', tensor=register_name)
-            ]
-            aggregate_layer_ins.append(register_name)
-            layers.append(layer)
-
-    melt_down_layers = build_melt_down(aggregate_layer_ins)
-    melt_down_layers.insert(0, dict(
-        type='retrieve', aggregation='concat',
-        tensors=aggregate_layer_ins
-    ))
-    melt_down_layers.append(dict(type='dense', size=6))
-    melt_down_layers.append(dict(type='register', tensor='aggregate_layer'))
-    layers.append(melt_down_layers)
-    return layers
+from data_provider import DataProvider
+from agent import load_agent
+from trader_env import StockEnvironment
 
 
 def train_main():
     with mlflow.start_run():
+        config = MlConfig(agent_name="trend-agent")
         git_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
         mlflow.log_param("git_hash", git_hash)
-        max_step_per_episode = 1000  # 2714200
-        mlflow.log_param("max_step_per_episode", max_step_per_episode)
+        for param in [a for a in dir(config) if not a.startswith('__')]:
+            mlflow.log_param(param, config.__getattribute__(param))
 
-        db = 1
-        mlflow.log_param("db", db)
-        data_provider = DataProvider(db)
         network_spec = "auto"
+        mlflow.log_param("network_spec", network_spec)
         #network_spec = conv_network(data_provider.load(0))
-
         #mlflow.log_param("network_spec", ',\n'.join([',\n'.join([json.dumps(part_ele) if not callable(part_ele) else str(part_ele) for part_ele in net_part])
                                                     # for net_part in network_spec]))
-        train(data_provider, max_step_per_episode, "artifacts", "trend-agent", False,  network_spec)
+
+        train(config, network_spec)
 
 def eval_():
-    name = "abcd-agent"
-    dir_ = "artifacts"
-    db = 3
-    data_provider = DataProvider(db)
-    max_step_per_episode = 1000
-    evaluate(dir_, name, data_provider, max_step_per_episode)
+    config = MlConfig(agent_name="abcd-agent")
+    data_provider = DataProvider(config.db)
+    env = StockEnvironment(data_provider, config.max_step_per_episode, 0)
+    agent = load_agent(config, env, None)
+    evaluate(config, data_provider, 0, agent)
 
 
 if __name__ == "__main__":
